@@ -27,7 +27,7 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
         const res = await fetch(`/api/stars/${childName}`);
         if (res.ok) {
           const data = await res.json();
-          const restored = new Set(data.filled_stars || []);
+          const restored = new Set<number>(data.filled_stars || []);
           setFilledStars(restored);
           if (restored.size === 5) {
             setTvUnlocked(true);
