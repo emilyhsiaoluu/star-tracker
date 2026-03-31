@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PixelStar } from './PixelStar';
 import { RetroTV } from './RetroTV';
 import { playMeow } from '@/lib/sounds';
@@ -11,13 +11,21 @@ interface KidPanelProps {
   character: 'charizard' | 'unicorn' | 'kitty';
 }
 
+// Fire-and-forget save — never blocks UI
+function saveStars(childName: string, stars: Set<number>) {
+  fetch(`/api/stars/${childName}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filled_stars: Array.from(stars) }),
+  }).catch((e) => console.error('Save failed:', e));
+}
+
 export function KidPanel({ name, nameColors, character }: KidPanelProps) {
   const [filledStars, setFilledStars] = useState<Set<number>>(new Set());
   const [explodingIndex, setExplodingIndex] = useState(-1);
   const [tvUnlocked, setTvUnlocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const loadedRef = useRef(false);
 
   const childName = name.toLowerCase();
 
@@ -30,39 +38,20 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
           const data = await res.json();
           const restored = new Set<number>(data.filled_stars || []);
           setFilledStars(restored);
-          if (restored.size === 5) {
-            setTvUnlocked(true);
-          }
+          if (restored.size === 5) setTvUnlocked(true);
         }
       } catch (e) {
         console.error('Load failed:', e);
       }
-      setLoaded(true);
+      loadedRef.current = true;
     })();
   }, [childName]);
 
-  // Save whenever stars change
-  const saveStars = useCallback(
-    async (stars: Set<number>) => {
-      setSyncing(true);
-      try {
-        await fetch(`/api/stars/${childName}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filled_stars: Array.from(stars) }),
-        });
-      } catch (e) {
-        console.error('Save failed:', e);
-      }
-      setSyncing(false);
-    },
-    [childName]
-  );
-
+  // Save on every change — skip the very first render before load completes
   useEffect(() => {
-    if (!loaded) return;
-    saveStars(filledStars);
-  }, [filledStars, loaded, saveStars]);
+    if (!loadedRef.current) return;
+    saveStars(childName, filledStars);
+  }, [filledStars, childName]);
 
   const handleStarClick = (i: number) => {
     if (tvUnlocked) return;
@@ -75,7 +64,7 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
         setExplodingIndex(i);
         setTimeout(() => setExplodingIndex(-1), 800);
       }
-      if (next.size === 5 && !tvUnlocked) {
+      if (next.size === 5) {
         if (character === 'kitty') playMeow();
         setTimeout(() => {
           setTvUnlocked(true);
@@ -87,21 +76,12 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
     });
   };
 
-  const handleReset = async () => {
-    setFilledStars(new Set());
+  const handleReset = () => {
+    const empty = new Set<number>();
+    setFilledStars(empty);
     setTvUnlocked(false);
     setShowConfetti(false);
-    setSyncing(true);
-    try {
-      await fetch(`/api/stars/${childName}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filled_stars: [] }),
-      });
-    } catch (e) {
-      console.error('Reset failed:', e);
-    }
-    setSyncing(false);
+    saveStars(childName, empty);
   };
 
   return (
