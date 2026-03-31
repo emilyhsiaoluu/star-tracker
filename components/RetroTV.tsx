@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { PixelCharizard } from './PixelCharizard';
 import { PixelUnicorn } from './PixelUnicorn';
+import { PixelKitty } from './PixelKitty';
 
 interface RetroTVProps {
   active: boolean;
-  character: 'charizard' | 'unicorn';
+  character: 'charizard' | 'unicorn' | 'kitty';
   onReset: () => void;
 }
 
@@ -126,6 +127,8 @@ export function RetroTV({ active, character, onReset }: RetroTVProps) {
                 >
                   {character === 'charizard' ? (
                     <PixelCharizard active />
+                  ) : character === 'kitty' ? (
+                    <PixelKitty active />
                   ) : (
                     <PixelUnicorn active />
                   )}

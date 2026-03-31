@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PixelStar } from './PixelStar';
 import { RetroTV } from './RetroTV';
+import { playMeow } from '@/lib/sounds';
 
 interface KidPanelProps {
   name: string;
   nameColors: [string, string];
-  character: 'charizard' | 'unicorn';
+  character: 'charizard' | 'unicorn' | 'kitty';
 }
 
 export function KidPanel({ name, nameColors, character }: KidPanelProps) {
@@ -75,6 +76,7 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
         setTimeout(() => setExplodingIndex(-1), 800);
       }
       if (next.size === 5 && !tvUnlocked) {
+        if (character === 'kitty') playMeow();
         setTimeout(() => {
           setTvUnlocked(true);
           setShowConfetti(true);

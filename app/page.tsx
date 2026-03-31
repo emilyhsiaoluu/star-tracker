@@ -57,7 +57,7 @@ export default function StarTracker() {
         <KidPanel
           name="Avery"
           nameColors={['#FF69B4', '#AA44FF']}
-          character="unicorn"
+          character="kitty"
         />
       </div>
     </div>

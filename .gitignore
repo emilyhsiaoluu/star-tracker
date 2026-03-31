@@ -19,3 +19,4 @@ dist/
 
 # Build
 *.tsbuildinfo
+.vercel
