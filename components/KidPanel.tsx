@@ -65,7 +65,7 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
   }, [filledStars, loaded, saveStars]);
 
   const handleStarClick = (i: number) => {
-    if (tvUnlocked || syncing) return;
+    if (tvUnlocked) return;
     setFilledStars((prev) => {
       const next = new Set(prev);
       if (next.has(i)) {
