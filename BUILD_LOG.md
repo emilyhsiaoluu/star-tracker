@@ -100,6 +100,25 @@ BUILD_LOG.md (this file)
 - [x] All animations preserved
 - [x] API routes built
 - [x] Supabase client configured
-- [ ] Supabase table created (Emily's action)
-- [ ] Local testing
-- [ ] GitHub + Vercel deployment
+- [x] Supabase table created
+- [x] Local testing (dev server verified)
+- [x] GitHub repo created
+- [x] Vercel deployment complete
+- [x] Environment variables configured
+- [x] TypeScript type errors fixed
+- [x] Production app LIVE
+
+## Deployment Details
+
+**GitHub**: https://github.com/emilyhsiaoluu/star-tracker
+**Vercel Production**: https://star-tracker-two.vercel.app
+**Supabase Project**: mfsurihnjrslnghlasvt.supabase.co
+**Table**: startracker_stars
+
+### How It Works
+1. Kid opens app on any device
+2. Clicks stars (1-5)
+3. Stars save to Supabase in real-time
+4. Other kid's device sees the same stars update
+5. When all 5 stars filled → TV turns on with their character
+6. Click RESET to clear stars
