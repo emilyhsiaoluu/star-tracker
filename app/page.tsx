@@ -1,6 +1,7 @@
 'use client';
 
 import { KidPanel } from '@/components/KidPanel';
+import { playMeow } from '@/lib/sounds';
 
 export default function StarTracker() {
   return (
@@ -57,7 +58,8 @@ export default function StarTracker() {
         <KidPanel
           name="Avery"
           nameColors={['#FF69B4', '#AA44FF']}
-          character="kitty"
+          character="unicorn"
+          completionSound={playMeow}
         />
       </div>
     </div>

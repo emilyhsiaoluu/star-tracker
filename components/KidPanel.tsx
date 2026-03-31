@@ -1,87 +1,88 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { PixelStar } from './PixelStar';
 import { RetroTV } from './RetroTV';
-import { playMeow } from '@/lib/sounds';
 
 interface KidPanelProps {
   name: string;
   nameColors: [string, string];
   character: 'charizard' | 'unicorn' | 'kitty';
+  completionSound?: () => void;
 }
 
-// Fire-and-forget save — never blocks UI
-function saveStars(childName: string, stars: Set<number>) {
+const EMPTY: boolean[] = [false, false, false, false, false];
+
+function toIndices(stars: boolean[]): number[] {
+  return stars.map((f, i) => (f ? i : -1)).filter((i) => i >= 0);
+}
+
+function fromIndices(indices: number[]): boolean[] {
+  return EMPTY.map((_, i) => indices.includes(i));
+}
+
+function persist(childName: string, stars: boolean[]) {
   fetch(`/api/stars/${childName}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filled_stars: Array.from(stars) }),
+    body: JSON.stringify({ filled_stars: toIndices(stars) }),
   }).catch((e) => console.error('Save failed:', e));
 }
 
-export function KidPanel({ name, nameColors, character }: KidPanelProps) {
-  const [filledStars, setFilledStars] = useState<Set<number>>(new Set());
+export function KidPanel({ name, nameColors, character, completionSound }: KidPanelProps) {
+  const [stars, setStars] = useState<boolean[]>(EMPTY);
   const [explodingIndex, setExplodingIndex] = useState(-1);
   const [tvUnlocked, setTvUnlocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const loadedRef = useRef(false);
 
   const childName = name.toLowerCase();
+  const filledCount = stars.filter(Boolean).length;
 
-  // Load stars on mount
+  // Load from Supabase on mount
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`/api/stars/${childName}`);
-        if (res.ok) {
-          const data = await res.json();
-          const restored = new Set<number>(data.filled_stars || []);
-          setFilledStars(restored);
-          if (restored.size === 5) setTvUnlocked(true);
-        }
-      } catch (e) {
-        console.error('Load failed:', e);
-      }
-      loadedRef.current = true;
-    })();
+    fetch(`/api/stars/${childName}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const loaded = fromIndices(data.filled_stars || []);
+        setStars(loaded);
+        if (loaded.filter(Boolean).length === 5) setTvUnlocked(true);
+      })
+      .catch((e) => console.error('Load failed:', e));
   }, [childName]);
-
-  // Save on every change — skip the very first render before load completes
-  useEffect(() => {
-    if (!loadedRef.current) return;
-    saveStars(childName, filledStars);
-  }, [filledStars, childName]);
 
   const handleStarClick = (i: number) => {
     if (tvUnlocked) return;
-    setFilledStars((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) {
-        next.delete(i);
-      } else {
-        next.add(i);
-        setExplodingIndex(i);
-        setTimeout(() => setExplodingIndex(-1), 800);
-      }
-      if (next.size === 5) {
-        if (character === 'kitty') playMeow();
+
+    setStars((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+
+      const count = next.filter(Boolean).length;
+      if (count === 5) {
+        completionSound?.();
         setTimeout(() => {
           setTvUnlocked(true);
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
         }, 500);
       }
+
+      if (!prev[i]) {
+        // Star was just turned on — show explosion
+        setExplodingIndex(i);
+        setTimeout(() => setExplodingIndex(-1), 800);
+      }
+
+      persist(childName, next);
       return next;
     });
   };
 
   const handleReset = () => {
-    const empty = new Set<number>();
-    setFilledStars(empty);
+    setStars(EMPTY);
     setTvUnlocked(false);
     setShowConfetti(false);
-    saveStars(childName, empty);
+    persist(childName, EMPTY);
   };
 
   return (
@@ -149,10 +150,10 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
           marginBottom: 16,
         }}
       >
-        {Array.from({ length: 5 }).map((_, i) => (
+        {stars.map((filled, i) => (
           <PixelStar
             key={i}
-            filled={filledStars.has(i)}
+            filled={filled}
             onClick={() => handleStarClick(i)}
             exploding={explodingIndex === i}
           />
@@ -167,7 +168,7 @@ export function KidPanel({ name, nameColors, character }: KidPanelProps) {
           marginBottom: 14,
         }}
       >
-        {tvUnlocked ? '★ TV TIME! ★' : `${filledStars.size}/5`}
+        {tvUnlocked ? '★ TV TIME! ★' : `${filledCount}/5`}
       </div>
 
       <RetroTV active={tvUnlocked} character={character} onReset={handleReset} />
