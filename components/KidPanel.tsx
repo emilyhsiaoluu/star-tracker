@@ -51,8 +51,6 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
   }, [childName]);
 
   const handleStarClick = (i: number) => {
-    if (tvUnlocked) return;
-
     setStars((prev) => {
       const next = [...prev];
       next[i] = !next[i];
@@ -65,10 +63,13 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
         }, 500);
+      } else {
+        // Star removed — lock TV back
+        setTvUnlocked(false);
+        setShowConfetti(false);
       }
 
       if (!prev[i]) {
-        // Star was just turned on — show explosion
         setExplodingIndex(i);
         setTimeout(() => setExplodingIndex(-1), 800);
       }
@@ -171,7 +172,9 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         {tvUnlocked ? '★ TV TIME! ★' : `${filledCount}/5`}
       </div>
 
-      <RetroTV active={tvUnlocked} character={character} onReset={handleReset} />
+      <div style={{ marginTop: 10 }}>
+        <RetroTV active={tvUnlocked} character={character} onReset={handleReset} />
+      </div>
     </div>
   );
 }
