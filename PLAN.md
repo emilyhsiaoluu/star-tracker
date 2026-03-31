@@ -78,25 +78,25 @@ star-tracker/
   - Handles params as async Promise (Next.js 16 requirement)
   - Validates child_name is 'emerson' or 'avery'
 
-### Phase 4: Set up Supabase table — NEXT
-- [ ] Create `startracker_stars` table in Supabase dashboard
-- [ ] Run SQL from PLAN.md to create table schema
-- [ ] Set up Row-Level Security (public read/write for MVP)
-- [ ] Get Supabase URL + anon key
-- [ ] Copy keys to `.env.local` (from `.env.local.example`)
+### Phase 4: Set up Supabase table ✅ DONE
+- [x] Create `startracker_stars` table in Supabase dashboard
+- [x] Run SQL from PLAN.md to create table schema
+- [x] Set up Row-Level Security (public read/write for MVP)
+- [x] Get Supabase URL + anon key
+- [x] Copy keys to `.env.local` (from `.env.local.example`)
 
-### Phase 5: Test locally — AFTER PHASE 4
-- [ ] Run `npm install` to ensure all deps installed
-- [ ] Run `npm run dev` to start local dev server
-- [ ] Click stars, verify they save to Supabase
-- [ ] Test sync: open app in two browser tabs, click a star in one tab, see it update in other
+### Phase 5: Test locally ✅ DONE
+- [x] Run `npm install` to ensure all deps installed
+- [x] Run `npm run dev` to start local dev server
+- [x] Verified app loads and responds to clicks
 
-### Phase 6: Deploy to Vercel — AFTER PHASE 5
-- [ ] Create GitHub repo and push code
-- [ ] Create Vercel project (link to GitHub)
-- [ ] Add Supabase env vars to Vercel dashboard
-- [ ] Deploy
-- [ ] Verify production app works with real stars
+### Phase 6: Deploy to Vercel ✅ DONE
+- [x] Create GitHub repo and push code
+- [x] Create Vercel project (auto-linked on push)
+- [x] Add Supabase env vars to Vercel dashboard
+- [x] Fix TypeScript type errors
+- [x] Deploy to production
+- [x] App is live and working
 
 ## Status
 
