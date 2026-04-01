@@ -33,12 +33,10 @@ function filledCountFromDates(starDates: number[]) {
   return starDates.filter((value) => value > 0).length;
 }
 
-function getVisibleStarCount(filledCount: number) {
-  if (filledCount === 0) return STARS_PER_LEVEL;
-  return Math.min(
-    Math.max(STARS_PER_LEVEL, Math.ceil(filledCount / STARS_PER_LEVEL) * STARS_PER_LEVEL),
-    MAX_STARS
-  );
+function getVisibleTierCount(filledCount: number) {
+  if (filledCount === 0) return 1;
+  const completedTiers = Math.floor(filledCount / STARS_PER_LEVEL);
+  return Math.min(completedTiers + 1, MAX_STARS / STARS_PER_LEVEL);
 }
 
 function normalizeSavedStars(saved: unknown) {
@@ -75,15 +73,11 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
   const [starDates, setStarDates] = useState<number[]>([...EMPTY_STAR_DATES]);
   const [explodingIndex, setExplodingIndex] = useState(-1);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [visibleStarCount, setVisibleStarCount] = useState(STARS_PER_LEVEL);
+  const [visibleTiers, setVisibleTiers] = useState(1);
 
   const childName = name.toLowerCase();
   const filledCount = filledCountFromDates(starDates);
   const rewardLevel = Math.floor(filledCount / STARS_PER_LEVEL);
-  const tvUnlocked = rewardLevel > 0;
-  const canShowMoreStars = tvUnlocked && filledCount >= visibleStarCount && visibleStarCount < MAX_STARS;
-  const visibleStars = starDates.slice(0, visibleStarCount);
-  const tvScale = rewardLevel > 0 ? TV_SCALES[Math.min(rewardLevel, TV_SCALES.length) - 1] : TV_SCALES[0];
 
   useEffect(() => {
     fetch(`/api/stars/${childName}`)
@@ -93,7 +87,7 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         const loadedCount = filledCountFromDates(loadedDates);
 
         setStarDates(loadedDates);
-        setVisibleStarCount(getVisibleStarCount(loadedCount));
+        setVisibleTiers(getVisibleTierCount(loadedCount));
       })
       .catch((error) => console.error('Load failed:', error));
   }, [childName]);
@@ -113,8 +107,10 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         completionSound?.();
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
+        setVisibleTiers(getVisibleTierCount(nextCount));
       } else if (nextRewardLevel < previousRewardLevel) {
         setShowConfetti(false);
+        setVisibleTiers(getVisibleTierCount(nextCount));
       }
 
       if (previousDates[index] === 0) {
@@ -129,13 +125,9 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
 
   const handleReset = () => {
     setStarDates([...EMPTY_STAR_DATES]);
-    setVisibleStarCount(STARS_PER_LEVEL);
+    setVisibleTiers(1);
     setShowConfetti(false);
     persist(childName, [...EMPTY_STAR_DATES]);
-  };
-
-  const handleMoreStars = () => {
-    setVisibleStarCount((current) => Math.min(current + STARS_PER_LEVEL, MAX_STARS));
   };
 
   return (
@@ -194,59 +186,70 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         {name.toUpperCase()}
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          justifyItems: 'center',
-          width: '100%',
-          gap: 8,
-          marginBottom: 16,
-        }}
-      >
-        {visibleStars.map((starDate, index) => (
-          <PixelStar
-            key={index}
-            filled={starDate > 0}
-            label={formatStarDate(starDate)}
-            onClick={() => handleStarClick(index)}
-            exploding={explodingIndex === index}
-          />
-        ))}
-      </div>
+      {Array.from({ length: visibleTiers }).map((_, tierIndex) => {
+        const startIdx = tierIndex * STARS_PER_LEVEL;
+        const tierStars = starDates.slice(startIdx, startIdx + STARS_PER_LEVEL);
+        const tierFilledCount = tierStars.filter((d) => d > 0).length;
+        const tierComplete = tierFilledCount === STARS_PER_LEVEL;
+        const tvScale = TV_SCALES[Math.min(tierIndex, TV_SCALES.length - 1)];
 
-      <div
-        style={{
-          fontFamily: 'var(--font-pixel)',
-          fontSize: 7,
-          color: tvUnlocked ? '#FFD700' : '#555',
-          marginBottom: 18,
-          textAlign: 'center',
-          minHeight: 16,
-          lineHeight: 1.5,
-        }}
-      >
-        {tvUnlocked ? `★ TV ${rewardLevel}/4 ★` : `${filledCount}/${MAX_STARS}`}
-      </div>
+        return (
+          <div key={tierIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                marginBottom: 8,
+              }}
+            >
+              {tierStars.map((starDate, i) => {
+                const globalIndex = startIdx + i;
+                return (
+                  <PixelStar
+                    key={globalIndex}
+                    filled={starDate > 0}
+                    label={formatStarDate(starDate)}
+                    onClick={() => handleStarClick(globalIndex)}
+                    exploding={explodingIndex === globalIndex}
+                    size={36}
+                  />
+                );
+              })}
+            </div>
 
-      <div
-        style={{
-          marginTop: 10,
-          minHeight: 182,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-        }}
-      >
-        <RetroTV
-          active={tvUnlocked}
-          character={character}
-          onReset={handleReset}
-          onMoreStars={handleMoreStars}
-          canShowMoreStars={canShowMoreStars}
-          scale={tvScale}
-        />
-      </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-pixel)',
+                fontSize: 7,
+                color: tierComplete ? '#FFD700' : '#555',
+                marginBottom: 8,
+                textAlign: 'center',
+                lineHeight: 1.5,
+              }}
+            >
+              {tierComplete ? `★ TV ${tierIndex + 1} ★` : `${tierFilledCount}/${STARS_PER_LEVEL}`}
+            </div>
+
+            <div
+              style={{
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'center',
+              }}
+            >
+              <RetroTV
+                active={tierComplete}
+                character={character}
+                onReset={tierIndex === 0 ? handleReset : undefined}
+                scale={tvScale}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

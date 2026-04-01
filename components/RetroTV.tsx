@@ -8,9 +8,7 @@ import { PixelKitty } from './PixelKitty';
 interface RetroTVProps {
   active: boolean;
   character: 'charizard' | 'unicorn' | 'kitty';
-  onReset: () => void;
-  onMoreStars?: () => void;
-  canShowMoreStars?: boolean;
+  onReset?: () => void;
   scale?: number;
 }
 
@@ -18,8 +16,6 @@ export function RetroTV({
   active,
   character,
   onReset,
-  onMoreStars,
-  canShowMoreStars = false,
   scale = 1,
 }: RetroTVProps) {
   const [scanline, setScanline] = useState(0);
@@ -254,15 +250,13 @@ export function RetroTV({
       />
 
       {/* Reset */}
-      {active && (
+      {active && onReset && (
         <div
           style={{
             position: 'absolute',
             bottom: -34,
             left: '50%',
             transform: 'translateX(-50%)',
-            display: 'flex',
-            gap: 6,
           }}
         >
           <button
@@ -280,23 +274,6 @@ export function RetroTV({
           >
             RESET
           </button>
-          {canShowMoreStars && onMoreStars && (
-            <button
-              onClick={onMoreStars}
-              style={{
-                fontFamily: 'var(--font-pixel)',
-                fontSize: 6,
-                background: '#1d2f1f',
-                color: '#9effb2',
-                border: '2px solid #355a3a',
-                padding: '3px 8px',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              MORE STARS
-            </button>
-          )}
         </div>
       )}
     </div>
