@@ -200,7 +200,7 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 2,
+                gap: 0,
                 marginBottom: 8,
               }}
             >
@@ -213,7 +213,7 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
                     label={formatStarDate(starDate)}
                     onClick={() => handleStarClick(globalIndex)}
                     exploding={explodingIndex === globalIndex}
-                    size={36}
+                    size={32}
                   />
                 );
               })}
