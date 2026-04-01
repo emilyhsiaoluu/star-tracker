@@ -50,7 +50,7 @@ export function PixelStar({
       style={{
         position: 'relative',
         width: size,
-        minHeight: size + 16,
+        minHeight: label ? size + 16 : size,
         cursor: 'pointer',
         transition: 'transform 0.15s',
         transform: filled ? 'scale(1)' : 'scale(0.8)',

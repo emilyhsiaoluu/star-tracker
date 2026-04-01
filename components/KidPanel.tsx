@@ -210,7 +210,6 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
                   <PixelStar
                     key={globalIndex}
                     filled={starDate > 0}
-                    label={formatStarDate(starDate)}
                     onClick={() => handleStarClick(globalIndex)}
                     exploding={explodingIndex === globalIndex}
                     size={32}
