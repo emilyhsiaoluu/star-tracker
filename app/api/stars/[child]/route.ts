@@ -1,4 +1,4 @@
-import { supabase, StarTrackerRow } from '@/lib/supabase';
+import { getSupabase, hasSupabaseEnv, StarTrackerRow } from '@/lib/supabase';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -12,7 +12,15 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid child name' }, { status: 400 });
   }
 
+  if (!hasSupabaseEnv) {
+    return NextResponse.json(
+      { error: 'Star tracker storage is not configured.' },
+      { status: 503 }
+    );
+  }
+
   try {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('startracker_stars')
       .select('*')
@@ -58,7 +66,15 @@ export async function PUT(
     return NextResponse.json({ error: 'Invalid child name' }, { status: 400 });
   }
 
+  if (!hasSupabaseEnv) {
+    return NextResponse.json(
+      { error: 'Star tracker storage is not configured.' },
+      { status: 503 }
+    );
+  }
+
   try {
+    const supabase = getSupabase();
     const { filled_stars } = await request.json();
 
     if (!Array.isArray(filled_stars)) {

@@ -9,9 +9,19 @@ interface RetroTVProps {
   active: boolean;
   character: 'charizard' | 'unicorn' | 'kitty';
   onReset: () => void;
+  onMoreStars?: () => void;
+  canShowMoreStars?: boolean;
+  scale?: number;
 }
 
-export function RetroTV({ active, character, onReset }: RetroTVProps) {
+export function RetroTV({
+  active,
+  character,
+  onReset,
+  onMoreStars,
+  canShowMoreStars = false,
+  scale = 1,
+}: RetroTVProps) {
   const [scanline, setScanline] = useState(0);
   useEffect(() => {
     if (!active) return;
@@ -20,7 +30,16 @@ export function RetroTV({ active, character, onReset }: RetroTVProps) {
   }, [active]);
 
   return (
-    <div style={{ position: 'relative', width: 160, height: 152, margin: '0 auto' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: 160,
+        height: 152,
+        margin: '0 auto',
+        transform: `scale(${scale})`,
+        transformOrigin: 'top center',
+      }}
+    >
       {/* V-Antenna */}
       <svg width="80" height="30" style={{ position: 'absolute', top: -26, left: 40, zIndex: 1 }}>
         <line x1="40" y1="28" x2="10" y2="2" stroke="#777" strokeWidth="3" />
@@ -236,24 +255,49 @@ export function RetroTV({ active, character, onReset }: RetroTVProps) {
 
       {/* Reset */}
       {active && (
-        <button
-          onClick={onReset}
+        <div
           style={{
             position: 'absolute',
-            bottom: -30,
+            bottom: -34,
             left: '50%',
             transform: 'translateX(-50%)',
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 6,
-            background: '#2a2a2a',
-            color: '#888',
-            border: '2px solid #444',
-            padding: '3px 10px',
-            cursor: 'pointer',
+            display: 'flex',
+            gap: 6,
           }}
         >
-          RESET
-        </button>
+          <button
+            onClick={onReset}
+            style={{
+              fontFamily: 'var(--font-pixel)',
+              fontSize: 6,
+              background: '#2a2a2a',
+              color: '#888',
+              border: '2px solid #444',
+              padding: '3px 10px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            RESET
+          </button>
+          {canShowMoreStars && onMoreStars && (
+            <button
+              onClick={onMoreStars}
+              style={{
+                fontFamily: 'var(--font-pixel)',
+                fontSize: 6,
+                background: '#1d2f1f',
+                color: '#9effb2',
+                border: '2px solid #355a3a',
+                padding: '3px 8px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              MORE STARS
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

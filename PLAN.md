@@ -3,6 +3,16 @@
 ## Overview
 Convert React star tracker to a shareable Next.js app with persistent Supabase storage.
 
+## Current App Definition
+- **What this app does:** Tracks vacation reward stars for Emerson and Avery, with TV rewards that unlock every 5 stars.
+
+## Core Features
+- Title reads **Vacation Star Tracker**
+- Each tapped star saves and shows the date it was earned in `M/D` format
+- Stars unlock in batches of 5, up to a hard max of 20
+- TV reward appears at 5, 10, 15, and 20 stars, getting bigger at each level
+- After each reward tier, user can either reset or reveal the next 5 stars
+
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router, Server Components)
 - **Database**: Supabase (`mfsurihnjrslnghlasvt.supabase.co`)

@@ -7,15 +7,23 @@ interface PixelStarProps {
   filled: boolean;
   onClick: () => void;
   exploding: boolean;
+  label?: string;
+  size?: number;
 }
 
-export function PixelStar({ filled, onClick, exploding }: PixelStarProps) {
+export function PixelStar({
+  filled,
+  onClick,
+  exploding,
+  label = '',
+  size = 42,
+}: PixelStarProps) {
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
     if (exploding) {
-      const cx = 24;
-      const cy = 24;
+      const cx = size / 2;
+      const cy = size / 2;
       const colors = ['#FFD700', '#FF6B35', '#FF1493', '#00FFFF', '#7FFF00', '#FFE135', '#FFF'];
       const np = [];
       for (let i = 0; i < 16; i++) {
@@ -41,12 +49,15 @@ export function PixelStar({ filled, onClick, exploding }: PixelStarProps) {
       onClick={onClick}
       style={{
         position: 'relative',
-        width: 48,
-        height: 48,
+        width: size,
+        minHeight: size + 16,
         cursor: 'pointer',
         transition: 'transform 0.15s',
         transform: filled ? 'scale(1)' : 'scale(0.8)',
         filter: filled ? 'drop-shadow(0 0 6px #FFD700)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       {particles.map((p) => (
@@ -54,8 +65,8 @@ export function PixelStar({ filled, onClick, exploding }: PixelStarProps) {
       ))}
       <svg
         viewBox="0 0 16 16"
-        width="48"
-        height="48"
+        width={size}
+        height={size}
         style={{ imageRendering: 'pixelated', display: 'block' }}
       >
         {filled ? (
@@ -86,6 +97,21 @@ export function PixelStar({ filled, onClick, exploding }: PixelStarProps) {
           </>
         )}
       </svg>
+      <div
+        style={{
+          marginTop: 2,
+          minHeight: 12,
+          fontFamily: 'var(--font-pixel)',
+          fontSize: 6,
+          color: filled ? '#FFD700' : 'transparent',
+          letterSpacing: 0,
+          textAlign: 'center',
+          lineHeight: 1.2,
+          textShadow: filled ? '0 0 4px #000' : 'none',
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

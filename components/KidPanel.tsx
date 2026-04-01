@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { PixelStar } from './PixelStar';
 import { RetroTV } from './RetroTV';
 
@@ -11,79 +11,131 @@ interface KidPanelProps {
   completionSound?: () => void;
 }
 
-const EMPTY: boolean[] = [false, false, false, false, false];
+const MAX_STARS = 20;
+const STARS_PER_LEVEL = 5;
+const EMPTY_STAR_DATES = Array<number>(MAX_STARS).fill(0);
+const TV_SCALES = [0.75, 1, 1.15, 1.3];
 
-function toIndices(stars: boolean[]): number[] {
-  return stars.map((f, i) => (f ? i : -1)).filter((i) => i >= 0);
+function encodeToday() {
+  const now = new Date();
+  return (now.getMonth() + 1) * 100 + now.getDate();
 }
 
-function fromIndices(indices: number[]): boolean[] {
-  return EMPTY.map((_, i) => indices.includes(i));
+function formatStarDate(code: number) {
+  if (code <= 0) return '';
+
+  const month = Math.floor(code / 100);
+  const day = code % 100;
+  return `${month}/${day}`;
 }
 
-function persist(childName: string, stars: boolean[]) {
+function filledCountFromDates(starDates: number[]) {
+  return starDates.filter((value) => value > 0).length;
+}
+
+function getVisibleStarCount(filledCount: number) {
+  if (filledCount === 0) return STARS_PER_LEVEL;
+  return Math.min(
+    Math.max(STARS_PER_LEVEL, Math.ceil(filledCount / STARS_PER_LEVEL) * STARS_PER_LEVEL),
+    MAX_STARS
+  );
+}
+
+function normalizeSavedStars(saved: unknown) {
+  if (!Array.isArray(saved)) {
+    return [...EMPTY_STAR_DATES];
+  }
+
+  const numericValues = saved
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    .map((value) => Math.max(0, Math.floor(value)));
+
+  const isLegacyIndexArray =
+    numericValues.length > 0 &&
+    numericValues.length <= STARS_PER_LEVEL &&
+    numericValues.every((value) => value >= 0 && value < STARS_PER_LEVEL);
+
+  if (isLegacyIndexArray) {
+    const today = encodeToday();
+    return EMPTY_STAR_DATES.map((_, index) => (index < numericValues.length ? today : 0));
+  }
+
+  return EMPTY_STAR_DATES.map((_, index) => numericValues[index] ?? 0);
+}
+
+function persist(childName: string, starDates: number[]) {
   fetch(`/api/stars/${childName}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filled_stars: toIndices(stars) }),
-  }).catch((e) => console.error('Save failed:', e));
+    body: JSON.stringify({ filled_stars: starDates }),
+  }).catch((error) => console.error('Save failed:', error));
 }
 
 export function KidPanel({ name, nameColors, character, completionSound }: KidPanelProps) {
-  const [stars, setStars] = useState<boolean[]>(EMPTY);
+  const [starDates, setStarDates] = useState<number[]>([...EMPTY_STAR_DATES]);
   const [explodingIndex, setExplodingIndex] = useState(-1);
-  const [tvUnlocked, setTvUnlocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [visibleStarCount, setVisibleStarCount] = useState(STARS_PER_LEVEL);
 
   const childName = name.toLowerCase();
-  const filledCount = stars.filter(Boolean).length;
+  const filledCount = filledCountFromDates(starDates);
+  const rewardLevel = Math.floor(filledCount / STARS_PER_LEVEL);
+  const tvUnlocked = rewardLevel > 0;
+  const canShowMoreStars = tvUnlocked && filledCount >= visibleStarCount && visibleStarCount < MAX_STARS;
+  const visibleStars = starDates.slice(0, visibleStarCount);
+  const tvScale = rewardLevel > 0 ? TV_SCALES[Math.min(rewardLevel, TV_SCALES.length) - 1] : TV_SCALES[0];
 
-  // Load from Supabase on mount
   useEffect(() => {
     fetch(`/api/stars/${childName}`)
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data) => {
-        const loaded = fromIndices(data.filled_stars || []);
-        setStars(loaded);
-        if (loaded.filter(Boolean).length === 5) setTvUnlocked(true);
+        const loadedDates = normalizeSavedStars(data.filled_stars);
+        const loadedCount = filledCountFromDates(loadedDates);
+
+        setStarDates(loadedDates);
+        setVisibleStarCount(getVisibleStarCount(loadedCount));
       })
-      .catch((e) => console.error('Load failed:', e));
+      .catch((error) => console.error('Load failed:', error));
   }, [childName]);
 
-  const handleStarClick = (i: number) => {
-    setStars((prev) => {
-      const next = [...prev];
-      next[i] = !next[i];
+  const handleStarClick = (index: number) => {
+    setStarDates((previousDates) => {
+      const nextDates = [...previousDates];
+      const previousCount = filledCountFromDates(previousDates);
 
-      const count = next.filter(Boolean).length;
-      if (count === 5) {
+      nextDates[index] = nextDates[index] > 0 ? 0 : encodeToday();
+
+      const nextCount = filledCountFromDates(nextDates);
+      const previousRewardLevel = Math.floor(previousCount / STARS_PER_LEVEL);
+      const nextRewardLevel = Math.floor(nextCount / STARS_PER_LEVEL);
+
+      if (nextRewardLevel > previousRewardLevel && nextCount % STARS_PER_LEVEL === 0) {
         completionSound?.();
-        setTimeout(() => {
-          setTvUnlocked(true);
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 3000);
-        }, 500);
-      } else {
-        // Star removed — lock TV back
-        setTvUnlocked(false);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      } else if (nextRewardLevel < previousRewardLevel) {
         setShowConfetti(false);
       }
 
-      if (!prev[i]) {
-        setExplodingIndex(i);
+      if (previousDates[index] === 0) {
+        setExplodingIndex(index);
         setTimeout(() => setExplodingIndex(-1), 800);
       }
 
-      persist(childName, next);
-      return next;
+      persist(childName, nextDates);
+      return nextDates;
     });
   };
 
   const handleReset = () => {
-    setStars(EMPTY);
-    setTvUnlocked(false);
+    setStarDates([...EMPTY_STAR_DATES]);
+    setVisibleStarCount(STARS_PER_LEVEL);
     setShowConfetti(false);
-    persist(childName, EMPTY);
+    persist(childName, [...EMPTY_STAR_DATES]);
+  };
+
+  const handleMoreStars = () => {
+    setVisibleStarCount((current) => Math.min(current + STARS_PER_LEVEL, MAX_STARS));
   };
 
   return (
@@ -93,7 +145,7 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '12px 4px 40px',
+        padding: '12px 4px 72px',
         position: 'relative',
       }}
     >
@@ -107,20 +159,20 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
             overflow: 'hidden',
           }}
         >
-          {Array.from({ length: 20 }).map((_, i) => (
+          {Array.from({ length: 20 }).map((_, index) => (
             <div
-              key={i}
+              key={index}
               style={{
                 position: 'absolute',
                 width: 5 + Math.random() * 6,
                 height: 5 + Math.random() * 6,
-                background: ['#FFD700', '#FF6B35', '#FF1493', '#00FFFF', '#7FFF00', '#FFF'][i % 6],
+                background: ['#FFD700', '#FF6B35', '#FF1493', '#00FFFF', '#7FFF00', '#FFF'][index % 6],
                 left: `${Math.random() * 100}%`,
                 top: -10,
                 animation: `confettiFall ${1.5 + Math.random() * 2}s ease-out forwards`,
                 animationDelay: `${Math.random() * 0.8}s`,
                 imageRendering: 'pixelated',
-              } as any}
+              } as CSSProperties}
             />
           ))}
         </div>
@@ -128,7 +180,7 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
 
       <div
         style={{
-          fontFamily: "'Press Start 2P', monospace",
+          fontFamily: 'var(--font-pixel)',
           fontSize: 11,
           background: `linear-gradient(90deg, ${nameColors[0]}, ${nameColors[1]})`,
           WebkitBackgroundClip: 'text',
@@ -144,36 +196,56 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
 
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 4,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          justifyItems: 'center',
+          width: '100%',
+          gap: 8,
           marginBottom: 16,
         }}
       >
-        {stars.map((filled, i) => (
+        {visibleStars.map((starDate, index) => (
           <PixelStar
-            key={i}
-            filled={filled}
-            onClick={() => handleStarClick(i)}
-            exploding={explodingIndex === i}
+            key={index}
+            filled={starDate > 0}
+            label={formatStarDate(starDate)}
+            onClick={() => handleStarClick(index)}
+            exploding={explodingIndex === index}
           />
         ))}
       </div>
 
       <div
         style={{
-          fontFamily: "'Press Start 2P', monospace",
+          fontFamily: 'var(--font-pixel)',
           fontSize: 7,
           color: tvUnlocked ? '#FFD700' : '#555',
-          marginBottom: 14,
+          marginBottom: 18,
+          textAlign: 'center',
+          minHeight: 16,
+          lineHeight: 1.5,
         }}
       >
-        {tvUnlocked ? '★ TV TIME! ★' : `${filledCount}/5`}
+        {tvUnlocked ? `★ TV ${rewardLevel}/4 ★` : `${filledCount}/${MAX_STARS}`}
       </div>
 
-      <div style={{ marginTop: 10 }}>
-        <RetroTV active={tvUnlocked} character={character} onReset={handleReset} />
+      <div
+        style={{
+          marginTop: 10,
+          minHeight: 182,
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+        }}
+      >
+        <RetroTV
+          active={tvUnlocked}
+          character={character}
+          onReset={handleReset}
+          onMoreStars={handleMoreStars}
+          canShowMoreStars={canShowMoreStars}
+          scale={tvScale}
+        />
       </div>
     </div>
   );

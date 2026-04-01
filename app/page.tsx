@@ -1,7 +1,7 @@
 'use client';
 
 import { KidPanel } from '@/components/KidPanel';
-import { playMeow } from '@/lib/sounds';
+import { playMeow, playRawr } from '@/lib/sounds';
 
 export default function StarTracker() {
   return (
@@ -15,7 +15,7 @@ export default function StarTracker() {
         flexDirection: 'column',
         alignItems: 'center',
         padding: '24px 4px 20px',
-        fontFamily: "'Press Start 2P', monospace",
+        fontFamily: 'var(--font-pixel)',
       }}
     >
       <div
@@ -29,7 +29,7 @@ export default function StarTracker() {
           animation: 'float 3s ease-in-out infinite',
         }}
       >
-        ★ STAR TRACKER ★
+        ★ VACATION STAR TRACKER ★
       </div>
 
       <div
@@ -47,6 +47,7 @@ export default function StarTracker() {
           name="Emerson"
           nameColors={['#FF2222', '#4488FF']}
           character="charizard"
+          completionSound={playRawr}
         />
         <div
           style={{

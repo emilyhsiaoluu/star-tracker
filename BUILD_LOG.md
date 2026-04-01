@@ -4,6 +4,42 @@
 
 ---
 
+## Session 2 — Vacation Tracker Rewards Expansion
+**Date**: 2026-04-01
+**Status**: ✅ COMPLETE
+
+### What We Changed
+1. **Renamed the app**
+   - Updated the on-page title to `Vacation Star Tracker`
+   - Updated metadata and Open Graph title text so the browser/share preview matches
+
+2. **Changed stars from simple on/off to dated rewards**
+   - Reworked saved star data from a 5-slot boolean-style model into a 20-slot date-code model
+   - Each filled star now shows the date it was earned in `M/D` format like `4/1` or `4/13`
+   - Added backward compatibility for the old 5-star saved format so existing data still loads
+
+3. **Added tiered reward progression**
+   - Stars now unlock in batches of 5
+   - After 5 stars, the first TV unlocks at 75% of the old size
+   - Added `MORE STARS` so the next 5 stars appear after each completed tier
+   - TV now grows at 10, 15, and 20 stars
+   - Hard cap is now 20 stars
+
+4. **Layout updates**
+   - Switched stars into a compact grid so larger reward counts fit cleanly
+   - Kept reset behavior, confetti, and reward sounds intact
+
+5. **Character sounds**
+   - Added a Charizard reward sound so Emerson now hears `rawr rawr rawr`
+   - Avery keeps the existing `meow meow meow`
+
+### Verification
+- Ran `npm run build`
+- Production build passed with TypeScript
+
+### Next Step
+- Open localhost and visually confirm the new 5-star-to-20-star flow feels right on mobile
+
 ## Session 1 — Scaffold & Component Refactor
 **Date**: 2026-03-30
 **Status**: ✅ COMPLETE

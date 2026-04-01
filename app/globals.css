@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+:root {
+  --font-pixel: 'Press Start 2P', 'Courier New', Courier, monospace;
+}
+
 html,
 body {
   width: 100%;
@@ -13,7 +17,7 @@ body {
 }
 
 body {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
 }
 
 @keyframes pulse {
