@@ -25,5 +25,6 @@ export interface StarTrackerRow {
   id: number;
   child_name: string;
   filled_stars: number[];
+  star_notes: string[];
   updated_at: string;
 }

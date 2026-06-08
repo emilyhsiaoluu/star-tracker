@@ -48,6 +48,7 @@ export default function StarTracker() {
           nameColors={['#FF2222', '#4488FF']}
           character="charizard"
           completionSound={playRawr}
+          rewardText="do nothing"
         />
         <div
           style={{
