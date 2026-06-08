@@ -8,7 +8,7 @@ import { StarEditor } from './StarEditor';
 interface KidPanelProps {
   name: string;
   nameColors: [string, string];
-  character: 'charizard' | 'unicorn' | 'kitty';
+  character: 'charizard' | 'unicorn' | 'kitty' | 'toilet';
   completionSound?: () => void;
   rewardText?: string;
 }

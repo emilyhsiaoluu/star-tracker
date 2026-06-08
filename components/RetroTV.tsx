@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { PixelCharizard } from './PixelCharizard';
 import { PixelUnicorn } from './PixelUnicorn';
 import { PixelKitty } from './PixelKitty';
+import { PixelToilet } from './PixelToilet';
 
 interface RetroTVProps {
   active: boolean;
-  character: 'charizard' | 'unicorn' | 'kitty';
+  character: 'charizard' | 'unicorn' | 'kitty' | 'toilet';
   onReset?: () => void;
   scale?: number;
   rewardText?: string;
@@ -162,6 +163,8 @@ export function RetroTV({
                     <PixelCharizard active />
                   ) : character === 'kitty' ? (
                     <PixelKitty active />
+                  ) : character === 'toilet' ? (
+                    <PixelToilet active />
                   ) : (
                     <PixelUnicorn active />
                   )}
