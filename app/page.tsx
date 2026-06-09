@@ -1,6 +1,7 @@
 'use client';
 
 import { KidPanel } from '@/components/KidPanel';
+import { Legend } from '@/components/Legend';
 import { playMeow, playRawr } from '@/lib/sounds';
 
 export default function StarTracker() {
@@ -63,6 +64,8 @@ export default function StarTracker() {
           completionSound={playMeow}
         />
       </div>
+
+      <Legend />
     </div>
   );
 }
