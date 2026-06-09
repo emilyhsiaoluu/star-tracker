@@ -54,7 +54,7 @@ export function PixelStar({
         cursor: 'pointer',
         transition: 'transform 0.15s',
         transform: filled ? 'scale(1)' : 'scale(0.8)',
-        filter: filled ? 'drop-shadow(0 0 6px #FFD700)' : 'none',
+        filter: filled ? 'drop-shadow(0 0 6px #8B4513)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -63,40 +63,22 @@ export function PixelStar({
       {particles.map((p) => (
         <Particle key={p.id} {...p} />
       ))}
-      <svg
-        viewBox="0 0 16 16"
-        width={size}
-        height={size}
-        style={{ imageRendering: 'pixelated', display: 'block' }}
+      <div
+        role="img"
+        aria-label={filled ? 'poop' : 'empty'}
+        style={{
+          width: size,
+          height: size,
+          fontSize: size * 0.82,
+          lineHeight: `${size}px`,
+          textAlign: 'center',
+          userSelect: 'none',
+          filter: filled ? 'none' : 'grayscale(1) brightness(0.5)',
+          opacity: filled ? 1 : 0.3,
+        }}
       >
-        {filled ? (
-          <>
-            <rect x="7" y="0" width="2" height="2" fill="#FFD700" />
-            <rect x="6" y="2" width="4" height="2" fill="#FFD700" />
-            <rect x="5" y="4" width="6" height="2" fill="#FFC200" />
-            <rect x="0" y="6" width="16" height="2" fill="#FFD700" />
-            <rect x="1" y="8" width="14" height="2" fill="#FFC200" />
-            <rect x="2" y="10" width="12" height="2" fill="#FFD700" />
-            <rect x="3" y="12" width="4" height="2" fill="#FFC200" />
-            <rect x="9" y="12" width="4" height="2" fill="#FFC200" />
-            <rect x="2" y="14" width="3" height="2" fill="#FFD700" />
-            <rect x="11" y="14" width="3" height="2" fill="#FFD700" />
-          </>
-        ) : (
-          <>
-            <rect x="7" y="0" width="2" height="2" fill="#3a3a3a" />
-            <rect x="6" y="2" width="4" height="2" fill="#333" />
-            <rect x="5" y="4" width="6" height="2" fill="#3a3a3a" />
-            <rect x="0" y="6" width="16" height="2" fill="#333" />
-            <rect x="1" y="8" width="14" height="2" fill="#3a3a3a" />
-            <rect x="2" y="10" width="12" height="2" fill="#333" />
-            <rect x="3" y="12" width="4" height="2" fill="#3a3a3a" />
-            <rect x="9" y="12" width="4" height="2" fill="#3a3a3a" />
-            <rect x="2" y="14" width="3" height="2" fill="#333" />
-            <rect x="11" y="14" width="3" height="2" fill="#333" />
-          </>
-        )}
-      </svg>
+        💩
+      </div>
       <div
         style={{
           marginTop: 2,

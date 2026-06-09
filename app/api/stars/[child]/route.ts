@@ -32,7 +32,7 @@ export async function GET(
       if (error.code === 'PGRST116') {
         const { data: newData, error: insertError } = await supabase
           .from('startracker_stars')
-          .insert([{ child_name: child, filled_stars: [] }])
+          .insert([{ child_name: child, filled_stars: [], star_notes: [] }])
           .select()
           .single();
 
@@ -75,11 +75,18 @@ export async function PUT(
 
   try {
     const supabase = getSupabase();
-    const { filled_stars } = await request.json();
+    const { filled_stars, star_notes } = await request.json();
 
     if (!Array.isArray(filled_stars)) {
       return NextResponse.json(
         { error: 'filled_stars must be an array' },
+        { status: 400 }
+      );
+    }
+
+    if (star_notes !== undefined && !Array.isArray(star_notes)) {
+      return NextResponse.json(
+        { error: 'star_notes must be an array' },
         { status: 400 }
       );
     }
@@ -90,6 +97,7 @@ export async function PUT(
         {
           child_name: child,
           filled_stars,
+          star_notes: Array.isArray(star_notes) ? star_notes : [],
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'child_name' }

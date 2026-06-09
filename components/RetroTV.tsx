@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { PixelCharizard } from './PixelCharizard';
 import { PixelUnicorn } from './PixelUnicorn';
 import { PixelKitty } from './PixelKitty';
+import { PixelToilet } from './PixelToilet';
 
 interface RetroTVProps {
   active: boolean;
-  character: 'charizard' | 'unicorn' | 'kitty';
+  character: 'charizard' | 'unicorn' | 'kitty' | 'toilet';
   onReset?: () => void;
   scale?: number;
+  rewardText?: string;
 }
 
 export function RetroTV({
@@ -17,6 +19,7 @@ export function RetroTV({
   character,
   onReset,
   scale = 1,
+  rewardText,
 }: RetroTVProps) {
   const [scanline, setScanline] = useState(0);
   useEffect(() => {
@@ -140,10 +143,28 @@ export function RetroTV({
                     zIndex: 2,
                   }}
                 >
-                  {character === 'charizard' ? (
+                  {rewardText ? (
+                    <div
+                      style={{
+                        fontFamily: 'var(--font-pixel)',
+                        fontSize: 11,
+                        lineHeight: 1.6,
+                        color: '#00ff88',
+                        textShadow: '0 0 6px rgba(0,255,136,0.6)',
+                        textAlign: 'center',
+                        padding: '0 6px',
+                        textTransform: 'uppercase',
+                        letterSpacing: 1,
+                      }}
+                    >
+                      {rewardText}
+                    </div>
+                  ) : character === 'charizard' ? (
                     <PixelCharizard active />
                   ) : character === 'kitty' ? (
                     <PixelKitty active />
+                  ) : character === 'toilet' ? (
+                    <PixelToilet active />
                   ) : (
                     <PixelUnicorn active />
                   )}

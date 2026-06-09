@@ -46,7 +46,7 @@ export default function StarTracker() {
         <KidPanel
           name="Emerson"
           nameColors={['#FF2222', '#4488FF']}
-          character="charizard"
+          character="toilet"
           completionSound={playRawr}
         />
         <div

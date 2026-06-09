@@ -3,17 +3,20 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { PixelStar } from './PixelStar';
 import { RetroTV } from './RetroTV';
+import { StarEditor } from './StarEditor';
 
 interface KidPanelProps {
   name: string;
   nameColors: [string, string];
-  character: 'charizard' | 'unicorn' | 'kitty';
+  character: 'charizard' | 'unicorn' | 'kitty' | 'toilet';
   completionSound?: () => void;
+  rewardText?: string;
 }
 
 const MAX_STARS = 20;
 const STARS_PER_LEVEL = 5;
 const EMPTY_STAR_DATES = Array<number>(MAX_STARS).fill(0);
+const EMPTY_STAR_NOTES = Array<string>(MAX_STARS).fill('');
 const TV_SCALES = [0.75, 1, 1.15, 1.3];
 
 function encodeToday() {
@@ -61,23 +64,34 @@ function normalizeSavedStars(saved: unknown) {
   return EMPTY_STAR_DATES.map((_, index) => numericValues[index] ?? 0);
 }
 
-function persist(childName: string, starDates: number[]) {
+function normalizeSavedNotes(saved: unknown) {
+  if (!Array.isArray(saved)) {
+    return [...EMPTY_STAR_NOTES];
+  }
+
+  return EMPTY_STAR_NOTES.map((_, index) =>
+    typeof saved[index] === 'string' ? saved[index] : ''
+  );
+}
+
+function persist(childName: string, starDates: number[], starNotes: string[]) {
   fetch(`/api/stars/${childName}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filled_stars: starDates }),
+    body: JSON.stringify({ filled_stars: starDates, star_notes: starNotes }),
   }).catch((error) => console.error('Save failed:', error));
 }
 
-export function KidPanel({ name, nameColors, character, completionSound }: KidPanelProps) {
+export function KidPanel({ name, nameColors, character, completionSound, rewardText }: KidPanelProps) {
   const [starDates, setStarDates] = useState<number[]>([...EMPTY_STAR_DATES]);
+  const [starNotes, setStarNotes] = useState<string[]>([...EMPTY_STAR_NOTES]);
   const [explodingIndex, setExplodingIndex] = useState(-1);
   const [showConfetti, setShowConfetti] = useState(false);
   const [visibleTiers, setVisibleTiers] = useState(1);
+  const [editingIndex, setEditingIndex] = useState(-1);
 
   const childName = name.toLowerCase();
   const filledCount = filledCountFromDates(starDates);
-  const rewardLevel = Math.floor(filledCount / STARS_PER_LEVEL);
 
   useEffect(() => {
     fetch(`/api/stars/${childName}`)
@@ -87,17 +101,24 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         const loadedCount = filledCountFromDates(loadedDates);
 
         setStarDates(loadedDates);
+        setStarNotes(normalizeSavedNotes(data.star_notes));
         setVisibleTiers(getVisibleTierCount(loadedCount));
       })
       .catch((error) => console.error('Load failed:', error));
   }, [childName]);
 
   const handleStarClick = (index: number) => {
+    // Tapping a star that's already earned opens its log entry for editing.
+    if (starDates[index] > 0) {
+      setEditingIndex(index);
+      return;
+    }
+
     setStarDates((previousDates) => {
       const nextDates = [...previousDates];
       const previousCount = filledCountFromDates(previousDates);
 
-      nextDates[index] = nextDates[index] > 0 ? 0 : encodeToday();
+      nextDates[index] = encodeToday();
 
       const nextCount = filledCountFromDates(nextDates);
       const previousRewardLevel = Math.floor(previousCount / STARS_PER_LEVEL);
@@ -108,27 +129,64 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
         setVisibleTiers(getVisibleTierCount(nextCount));
-      } else if (nextRewardLevel < previousRewardLevel) {
-        setShowConfetti(false);
-        setVisibleTiers(getVisibleTierCount(nextCount));
       }
 
-      if (previousDates[index] === 0) {
-        setExplodingIndex(index);
-        setTimeout(() => setExplodingIndex(-1), 800);
-      }
+      setExplodingIndex(index);
+      setTimeout(() => setExplodingIndex(-1), 800);
 
-      persist(childName, nextDates);
+      persist(childName, nextDates, starNotes);
+      return nextDates;
+    });
+
+    // Open the editor so you can record what they did to earn this star.
+    setEditingIndex(index);
+  };
+
+  const handleEditDate = (index: number, code: number) => {
+    setStarDates((previousDates) => {
+      const nextDates = [...previousDates];
+      nextDates[index] = code > 0 ? code : nextDates[index];
+      persist(childName, nextDates, starNotes);
       return nextDates;
     });
   };
 
+  const handleEditNote = (index: number, note: string) => {
+    setStarNotes((previousNotes) => {
+      const nextNotes = [...previousNotes];
+      nextNotes[index] = note;
+      persist(childName, starDates, nextNotes);
+      return nextNotes;
+    });
+  };
+
+  const handleRemoveStar = (index: number) => {
+    const nextDates = [...starDates];
+    const nextNotes = [...starNotes];
+    nextDates[index] = 0;
+    nextNotes[index] = '';
+
+    const nextCount = filledCountFromDates(nextDates);
+
+    setStarDates(nextDates);
+    setStarNotes(nextNotes);
+    setVisibleTiers(getVisibleTierCount(nextCount));
+    setShowConfetti(false);
+    setEditingIndex(-1);
+    persist(childName, nextDates, nextNotes);
+  };
+
   const handleReset = () => {
     setStarDates([...EMPTY_STAR_DATES]);
+    setStarNotes([...EMPTY_STAR_NOTES]);
     setVisibleTiers(1);
     setShowConfetti(false);
-    persist(childName, [...EMPTY_STAR_DATES]);
+    persist(childName, [...EMPTY_STAR_DATES], [...EMPTY_STAR_NOTES]);
   };
+
+  const logEntries = starDates
+    .map((dateCode, index) => ({ dateCode, index, note: starNotes[index] ?? '' }))
+    .filter((entry) => entry.dateCode > 0);
 
   return (
     <div
@@ -244,11 +302,85 @@ export function KidPanel({ name, nameColors, character, completionSound }: KidPa
                 character={character}
                 onReset={tierIndex === 0 ? handleReset : undefined}
                 scale={tvScale}
+                rewardText={rewardText}
               />
             </div>
           </div>
         );
       })}
+
+      {logEntries.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 200, marginTop: 8 }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-pixel)',
+              fontSize: 7,
+              color: '#888',
+              letterSpacing: 1,
+              textAlign: 'center',
+              marginBottom: 8,
+            }}
+          >
+            ★ LOG ★
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {logEntries.map((entry) => (
+              <button
+                key={entry.index}
+                onClick={() => setEditingIndex(entry.index)}
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'baseline',
+                  textAlign: 'left',
+                  background: '#141414',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: 5,
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-pixel)',
+                    fontSize: 7,
+                    color: nameColors[0],
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatStarDate(entry.dateCode)}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'system-ui, sans-serif',
+                    fontSize: 12,
+                    color: entry.note ? '#ddd' : '#555',
+                    lineHeight: 1.3,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {entry.note || 'tap to add…'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {editingIndex >= 0 && (
+        <StarEditor
+          starNumber={editingIndex + 1}
+          dateCode={starDates[editingIndex]}
+          note={starNotes[editingIndex] ?? ''}
+          accentColor={nameColors[0]}
+          onChangeDate={(code) => handleEditDate(editingIndex, code)}
+          onChangeNote={(note) => handleEditNote(editingIndex, note)}
+          onRemove={() => handleRemoveStar(editingIndex)}
+          onClose={() => setEditingIndex(-1)}
+        />
+      )}
     </div>
   );
 }
