@@ -43,6 +43,8 @@ export default function StarTracker() {
         }}
       />
 
+      <Legend />
+
       <div style={{ display: 'flex', width: '100%', maxWidth: 420, gap: 4 }}>
         <KidPanel
           name="Emerson"
@@ -64,8 +66,6 @@ export default function StarTracker() {
           completionSound={playMeow}
         />
       </div>
-
-      <Legend />
     </div>
   );
 }
